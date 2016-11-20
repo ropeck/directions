@@ -2,9 +2,12 @@ package directions
 import (
 	"os"
 	"net/http"
-        "appengine"
-        "appengine/datastore"
+        "google.golang.org/appengine"
+        "google.golang.org/appengine/datastore"
+        "google.golang.org/appengine/urlfetch"
 	"googlemaps.github.io/maps"
+	"github.com/kr/pretty"
+//        "golang.org/x/net/context"
 )
 
 type Config struct {
@@ -12,9 +15,17 @@ type Config struct {
 	Value string
   }
 
-func Apikey(r *http.Request) string {
+type Directions struct {
+	Origin string
+  Client *maps.Client
+  Apikey string
+  r *http.Request
+  Resp string
+}
+
+func (d *Directions) GetApikey() string {
 	res := make([]Config, 10)
-	ctx := appengine.NewContext(r)
+	ctx := appengine.NewContext(d.r)
 	q := datastore.NewQuery("Config")
 	_, _ = q.GetAll(ctx, &res)
 
@@ -27,21 +38,23 @@ func Apikey(r *http.Request) string {
 	return c
 }
 
-type Directions struct {
-	Origin string
-  Client *maps.Client
-  Apikey string
-}
-
 func NewDirections(r *http.Request) *Directions {
   var d = new(Directions)
-  c, _ := maps.NewClient(maps.WithAPIKey(Apikey(r)))
+  d.r = r
+  d.Apikey = d.GetApikey()
+  ctx := appengine.NewContext(r)
+  uc := urlfetch.Client(ctx)
+  c, _ := maps.NewClient(maps.WithAPIKey(d.Apikey), maps.WithHTTPClient(uc))
   d.Client = c
-  d.Apikey = Apikey(r)
   return d
 }
 
 func (d *Directions) Directions() {
-  d.Origin = "something"
+  r := &maps.DirectionsRequest{
+      Origin:      "1200 Crittenden Lane, Mountain View",
+      Destination: "90 Enterprise Way, Scotts Valley",
+  }
+  resp, _, err := d.Client.Directions(appengine.NewContext(d.r), r)
+  d.Resp = pretty.Sprint(err) + pretty.Sprint(resp) + pretty.Sprint(r)
 }
 
