@@ -21,6 +21,9 @@ type Directions struct {
   Apikey string
   r *http.Request
   Resp string
+  Leg *maps.Leg
+  Dir *maps.Route
+  Steps []*maps.Step
 }
 
 func (d *Directions) GetApikey() string {
@@ -44,17 +47,26 @@ func NewDirections(r *http.Request) *Directions {
   d.Apikey = d.GetApikey()
   ctx := appengine.NewContext(r)
   uc := urlfetch.Client(ctx)
-  c, _ := maps.NewClient(maps.WithAPIKey(d.Apikey), maps.WithHTTPClient(uc))
+  c, err := maps.NewClient(maps.WithAPIKey(d.Apikey), maps.WithHTTPClient(uc))
   d.Client = c
+  if err != nil {
+    d.Resp = err.Error()
+  }
   return d
 }
 
 func (d *Directions) Directions() {
   r := &maps.DirectionsRequest{
+      Mode:	   maps.TravelModeDriving,
       Origin:      "1200 Crittenden Lane, Mountain View",
       Destination: "90 Enterprise Way, Scotts Valley",
   }
-  resp, _, err := d.Client.Directions(appengine.NewContext(d.r), r)
-  d.Resp = pretty.Sprint(err) + pretty.Sprint(resp) + pretty.Sprint(r)
+  if d.Resp == "" {
+    resp, _, _ := d.Client.Directions(appengine.NewContext(d.r), r)
+    d.Dir = &resp[0]
+    d.Steps = d.Dir.Legs[0].Steps
+    d.Resp = pretty.Sprint(d.Dir.Legs[0])
+    d.Leg = d.Dir.Legs[0]
+  } 
 }
 
