@@ -1,6 +1,8 @@
 package directions
 import (
 	"os"
+	"time"
+	"html/template"
 	"net/http"
         "google.golang.org/appengine"
         "google.golang.org/appengine/datastore"
@@ -23,7 +25,13 @@ type Directions struct {
   Resp string
   Leg *maps.Leg
   Dir *maps.Route
-  Steps []*maps.Step
+  Steps []*Step
+}
+
+type Step struct {
+  Dist string
+  Duration time.Duration
+  Directions template.HTML
 }
 
 func (d *Directions) GetApikey() string {
@@ -64,8 +72,10 @@ func (d *Directions) Directions() {
   if d.Resp == "" {
     resp, _, _ := d.Client.Directions(appengine.NewContext(d.r), r)
     d.Dir = &resp[0]
-    d.Steps = d.Dir.Legs[0].Steps
-    d.Resp = pretty.Sprint(d.Dir.Legs[0])
+    for _, v := range d.Dir.Legs[0].Steps {
+      d.Steps = append(d.Steps, &Step{v.Distance.HumanReadable, v.Duration, template.HTML(v.HTMLInstructions)})
+    }
+    d.Resp = pretty.Sprint(d.Steps)
     d.Leg = d.Dir.Legs[0]
   } 
 }
