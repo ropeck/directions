@@ -69,10 +69,10 @@ func (d *Directions) Directions() {
 		Mode:        maps.TravelModeDriving,
 		Origin:      "1200 Crittenden Lane, Mountain View",
 		Destination: "90 Enterprise Way, Scotts Valley",
-		DepartureTime:  time.Now().String(),
+	//	DepartureTime:  time.Now().String(),
 	}
 
-	resp, _, err := d.Client.Directions(appengine.NewContext(d.r), r)
+	resp, _, _ := d.Client.Directions(appengine.NewContext(d.r), r)
 	d.Dir = &resp[0]
 	for _, v := range d.Dir.Legs[0].Steps {
 		d.Steps = append(d.Steps, &Step{v.Distance.HumanReadable, v.Duration, template.HTML(v.HTMLInstructions)})
