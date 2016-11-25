@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"encoding/json"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -68,15 +69,17 @@ func (d *Directions) Directions() {
 		Mode:        maps.TravelModeDriving,
 		Origin:      "1200 Crittenden Lane, Mountain View",
 		Destination: "90 Enterprise Way, Scotts Valley",
-		DepartureTime:  time.Now()
+		DepartureTime:  time.Now().String(),
 	}
 
-	resp, _, _ := d.Client.Directions(appengine.NewContext(d.r), r)
+	resp, _, err := d.Client.Directions(appengine.NewContext(d.r), r)
 	d.Dir = &resp[0]
 	for _, v := range d.Dir.Legs[0].Steps {
 		d.Steps = append(d.Steps, &Step{v.Distance.HumanReadable, v.Duration, template.HTML(v.HTMLInstructions)})
 	}
-	d.Resp = d.Steps
-	d.Leg = d.Dir.Legs
-	d.Resp = &resp
+	//s, _ := json.Marshal(d.Steps)
+	//d.Resp = string(s)
+	d.Leg = d.Dir.Legs[0]
+	s, _ := json.Marshal(&resp)
+	d.Resp = string(s)
 }
