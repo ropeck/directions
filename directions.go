@@ -10,6 +10,7 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/urlfetch"
+	"google.golang.org/appengine/log"
 	"googlemaps.github.io/maps"
 )
 
@@ -27,6 +28,8 @@ type Directions struct {
 	Leg    *maps.Leg
 	Dir    *maps.Route
 	Steps  []*Step
+	Duration   time.Duration
+	DurationInTraffic   time.Duration
 }
 
 type Step struct {
@@ -69,17 +72,23 @@ func (d *Directions) Directions() {
 		Mode:        maps.TravelModeDriving,
 		Origin:      "1200 Crittenden Lane, Mountain View",
 		Destination: "90 Enterprise Way, Scotts Valley",
-	//	DepartureTime:  time.Now().String(),
+		//DepartureTime:  string(time.Now().Unix()+300),
+		DepartureTime:  "now",
 	}
+	ctx := appengine.NewContext(d.r)
 
-	resp, _, _ := d.Client.Directions(appengine.NewContext(d.r), r)
+	resp, _, err := d.Client.Directions(appengine.NewContext(d.r), r)
+	s, _ := json.Marshal(&resp)
+	log.Infof(ctx, string(s))
+	if err != nil {
+		log.Infof(ctx, err.Error())
+	}
 	d.Dir = &resp[0]
 	for _, v := range d.Dir.Legs[0].Steps {
 		d.Steps = append(d.Steps, &Step{v.Distance.HumanReadable, v.Duration, template.HTML(v.HTMLInstructions)})
 	}
-	//s, _ := json.Marshal(d.Steps)
-	//d.Resp = string(s)
 	d.Leg = d.Dir.Legs[0]
-	s, _ := json.Marshal(&resp)
+	d.Duration = d.Leg.Duration
+	d.DurationInTraffic = d.DurationInTraffic
 	d.Resp = string(s)
 }
