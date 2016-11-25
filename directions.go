@@ -32,6 +32,8 @@ type Directions struct {
 	Duration   time.Duration
 	DurationInTraffic   time.Duration
 	Distance maps.Distance
+	dcookie	*http.Cookie
+	ocookie *http.Cookie
 }
 
 type Step struct {
@@ -69,17 +71,38 @@ func NewDirections(r *http.Request) *Directions {
 	return d
 }
 
+
 func (d *Directions) Directions() {
+	// really not sure where the cookie/session stuff fits best.
+	// put it here for now
+	// two cookies for the start and dest total.
+	var origin, destination string
+
+	cookie, err := d.r.Cookie("origin")
+	d.ocookie = cookie
+	if err != nil {
+		origin = "1200 Crittenden Lane, Mountain View"
+	} else {
+		origin = cookie.Value
+	}
+	cookie, err = d.r.Cookie("destination")
+	d.dcookie = cookie
+	if err != nil {
+		destination = "90 Enterprise Way, Scotts Valley"
+	} else {
+		destination = cookie.Value
+	}
+
 	r := &maps.DirectionsRequest{
 		Mode:        maps.TravelModeDriving,
-		Origin:      "1200 Crittenden Lane, Mountain View",
-		Destination: "90 Enterprise Way, Scotts Valley",
+		Origin:      origin,
+		Destination: destination,
 		DepartureTime:  strconv.FormatInt(time.Now().Unix(), 10),
 	}
 	ctx := appengine.NewContext(d.r)
 
 	resp, _, err := d.Client.Directions(appengine.NewContext(d.r), r)
-	s, _ := json.Marshal(&resp)
+	s, _ := json.MarshalIndent(&resp,"","  ")
 	log.Infof(ctx, string(s))
 	if err != nil {
 		log.Infof(ctx, err.Error())
