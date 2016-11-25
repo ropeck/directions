@@ -78,18 +78,16 @@ func (d *Directions) Directions() {
 	// two cookies for the start and dest total.
 	var origin, destination string
 
+	origin = "1200 Crittenden Lane, Mountain View"
+	destination = "90 Enterprise Way, Scotts Valley"
 	cookie, err := d.r.Cookie("origin")
 	d.ocookie = cookie
-	if err != nil {
-		origin = "1200 Crittenden Lane, Mountain View"
-	} else {
+	if err == nil && cookie.Value != "" {
 		origin = cookie.Value
 	}
 	cookie, err = d.r.Cookie("destination")
 	d.dcookie = cookie
-	if err != nil {
-		destination = "90 Enterprise Way, Scotts Valley"
-	} else {
+	if err == nil && cookie.Value != "" {
 		destination = cookie.Value
 	}
 
