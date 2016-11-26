@@ -37,9 +37,10 @@ type Directions struct {
 }
 
 type Step struct {
-	Dist       string
+	Distance	string
 	Duration   time.Duration
 	Directions template.HTML
+	Color	string
 }
 
 func (d *Directions) GetApikey() string {
@@ -71,6 +72,15 @@ func NewDirections(r *http.Request) *Directions {
 	return d
 }
 
+func NewStep(v *maps.Step) *Step {
+	st := Step{Distance: v.Distance.HumanReadable, Duration: v.Duration,
+		Directions: template.HTML(v.HTMLInstructions),
+		Color: "none"}
+	if (st.Duration/time.Second > 5*60) {
+		st.Color = "red"
+	}
+	return &st
+}
 
 func (d *Directions) Directions() {
 	// really not sure where the cookie/session stuff fits best.
@@ -110,7 +120,7 @@ func (d *Directions) Directions() {
 	}
 	d.Dir = &resp[0]
 	for _, v := range d.Dir.Legs[0].Steps {
-		d.Steps = append(d.Steps, &Step{v.Distance.HumanReadable, v.Duration, template.HTML(v.HTMLInstructions)})
+		d.Steps = append(d.Steps, NewStep(v))
 	}
 	d.Leg = d.Dir.Legs[0]
 	d.Distance = d.Leg.Distance
