@@ -32,8 +32,8 @@ type Directions struct {
 	Duration   time.Duration
 	DurationInTraffic   time.Duration
 	Distance maps.Distance
-	dcookie	*http.Cookie
-	ocookie *http.Cookie
+	Dcookie	*http.Cookie
+	Ocookie *http.Cookie
 }
 
 type Step struct {
@@ -81,15 +81,18 @@ func (d *Directions) Directions() {
 	origin = "1200 Crittenden Lane, Mountain View"
 	destination = "90 Enterprise Way, Scotts Valley"
 	cookie, err := d.r.Cookie("origin")
-	d.ocookie = cookie
 	if err == nil && cookie.Value != "" {
 		origin = cookie.Value
-	}
+	} else {
+		cookie=  &http.Cookie{Name: "origin", Value: origin}
+ 	}
+	d.Ocookie = cookie
 	cookie, err = d.r.Cookie("destination")
-	d.dcookie = cookie
 	if err == nil && cookie.Value != "" {
 		destination = cookie.Value
 	}
+		cookie=  &http.Cookie{Name: "destination", Value: destination}
+	d.Dcookie = cookie
 
 	r := &maps.DirectionsRequest{
 		Mode:        maps.TravelModeDriving,
